@@ -17,13 +17,22 @@ class CartBloc extends Bloc<CartEvent, CartState> {
   Future<void> _onCartLoaded(CartLoaded event, Emitter<CartState> emit) async {
     try {
       emit(state.copyWith(status: CartStatus.loading));
+      
       final cartData = await _repo.getCart();
-
-      // API response ni to'g'ri parse qiling
       final items = <CartItem>[];
+      
+      // API response ni to'g'ri parse qilish
       if (cartData.containsKey('items') && cartData['items'] is List) {
         final itemsList = cartData['items'] as List;
-        items.addAll(itemsList.map((item) => CartItem.fromJson(item)).toList());
+        for (final item in itemsList) {
+          if (item is Map<String, dynamic>) {
+            try {
+              items.add(CartItem.fromJson(item));
+            } catch (e) {
+              print('CartItem parse xatoligi: $e, item: $item');
+            }
+          }
+        }
       }
 
       final totalPrice = items.fold(0.0, (sum, item) => sum + (item.price * item.quantity));
@@ -33,13 +42,15 @@ class CartBloc extends Bloc<CartEvent, CartState> {
           status: CartStatus.success,
           items: items,
           totalPrice: totalPrice,
+          errorMessage: null,
         ),
       );
     } catch (e) {
+      print('Cart yuklashda xatolik: $e');
       emit(
         state.copyWith(
           status: CartStatus.error,
-          errorMessage: e.toString(),
+          errorMessage: 'Cart ma\'lumotlarini yuklashda xatolik: ${e.toString()}',
         ),
       );
     }
@@ -47,17 +58,22 @@ class CartBloc extends Bloc<CartEvent, CartState> {
 
   Future<void> _onCartItemAdded(CartItemAdded event, Emitter<CartState> emit) async {
     try {
+      emit(state.copyWith(status: CartStatus.loading));
+      
       await _repo.saveToCart(
         productId: event.productId,
         quantity: event.quantity,
         state: 'add',
       );
-      add(CartLoaded()); // Cartni qayta yuklash
+      
+      // Cartni qayta yuklash
+      add(CartLoaded());
     } catch (e) {
+      print('Cart ga qo\'shishda xatolik: $e');
       emit(
         state.copyWith(
           status: CartStatus.error,
-          errorMessage: e.toString(),
+          errorMessage: 'Mahsulotni qo\'shishda xatolik: ${e.toString()}',
         ),
       );
     }
@@ -65,17 +81,22 @@ class CartBloc extends Bloc<CartEvent, CartState> {
 
   Future<void> _onCartItemRemoved(CartItemRemoved event, Emitter<CartState> emit) async {
     try {
+      emit(state.copyWith(status: CartStatus.loading));
+      
       await _repo.saveToCart(
         productId: event.productId,
         quantity: 0,
         state: 'remove',
       );
+      
+      // Cartni qayta yuklash
       add(CartLoaded());
     } catch (e) {
+      print('Cart dan o\'chirishda xatolik: $e');
       emit(
         state.copyWith(
           status: CartStatus.error,
-          errorMessage: e.toString(),
+          errorMessage: 'Mahsulotni o\'chirishda xatolik: ${e.toString()}',
         ),
       );
     }
@@ -83,17 +104,22 @@ class CartBloc extends Bloc<CartEvent, CartState> {
 
   Future<void> _onCartItemQuantityUpdated(CartItemQuantityUpdated event, Emitter<CartState> emit) async {
     try {
+      emit(state.copyWith(status: CartStatus.loading));
+      
       await _repo.saveToCart(
         productId: event.productId,
         quantity: event.quantity,
         state: 'update',
       );
+      
+      // Cartni qayta yuklash
       add(CartLoaded());
     } catch (e) {
+      print('Cart miqdorini yangilashda xatolik: $e');
       emit(
         state.copyWith(
           status: CartStatus.error,
-          errorMessage: e.toString(),
+          errorMessage: 'Miqdorni yangilashda xatolik: ${e.toString()}',
         ),
       );
     }

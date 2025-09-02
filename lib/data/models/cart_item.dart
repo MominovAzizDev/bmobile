@@ -17,13 +17,42 @@ class CartItem {
 
   factory CartItem.fromJson(Map<String, dynamic> json) {
     return CartItem(
-      productId: json['productId']?.toString() ?? '',
-      productName: json['productName']?.toString() ?? '',
-      productDetail: json['productDetail']?.toString() ?? '',
-      kvPrice: json['kvPrice']?.toString() ?? '',
-      price: (json['price'] ?? 0).toDouble(),
-      quantity: json['quantity'] ?? 1,
+      productId: json['productId']?.toString() ?? json['id']?.toString() ?? '',
+      productName: json['productName']?.toString() ?? json['name']?.toString() ?? '',
+      productDetail: json['productDetail']?.toString() ?? json['detail']?.toString() ?? json['description']?.toString() ?? '',
+      kvPrice: json['kvPrice']?.toString() ?? json['unitPrice']?.toString() ?? '',
+      price: _parsePrice(json['price'] ?? json['totalPrice'] ?? 0),
+      quantity: _parseInt(json['quantity'] ?? 1),
     );
+  }
+
+  static double _parsePrice(dynamic value) {
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      return double.tryParse(value) ?? 0.0;
+    }
+    return 0.0;
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) {
+      return int.tryParse(value) ?? 1;
+    }
+    return 1;
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'productId': productId,
+      'productName': productName,
+      'productDetail': productDetail,
+      'kvPrice': kvPrice,
+      'price': price,
+      'quantity': quantity,
+    };
   }
 
   CartItem copyWith({
@@ -43,4 +72,13 @@ class CartItem {
       quantity: quantity ?? this.quantity,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is CartItem && other.productId == productId;
+  }
+
+  @override
+  int get hashCode => productId.hashCode;
 }
