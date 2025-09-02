@@ -1,10 +1,8 @@
 import "package:gazobeton/core/exports.dart";
-import "package:gazobeton/features/orders/blocs/orders_bloc.dart";
 
 GoRouter router = GoRouter(
   navigatorKey: navigatorKey,
   initialLocation: Routes.home,
-
   routes: [
     GoRoute(
       path: Routes.splash,
@@ -23,10 +21,7 @@ GoRouter router = GoRouter(
         ),
         GoRoute(
           path: Routes.orders,
-          builder: (context, state) => BlocProvider(
-            create: (context) => OrdersBloc(repo: context.read()),
-            child: OrdersView(),
-          ),
+          builder: (context, state) => OrdersView(),
         ),
         GoRoute(
           path: Routes.profile,
@@ -84,10 +79,7 @@ GoRouter router = GoRouter(
     ),
     GoRoute(
       path: Routes.checkout,
-      builder: (context, state) => BlocProvider(
-        create: (context) => CheckoutBloc(repo: context.read()),
-        child: CheckoutView(),
-      ),
+      builder: (context, state) => CheckoutView(),
     ),
     GoRoute(
       path: Routes.userSettings,

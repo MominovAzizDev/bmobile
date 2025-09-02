@@ -4,12 +4,11 @@ import 'package:gazobeton/core/servises/interseptors.dart';
 import 'package:gazobeton/data/models/auth_models/auth_model.dart';
 
 import '../data/models/auth_models/home_model.dart';
-import '../data/models/auth_models/product_model.dart';
 
 class ApiClient {
   final Dio dio = Dio(
     BaseOptions(
-      baseUrl: "http://api.1000kitob.uz/api",
+      baseUrl: "https://api.bsgazobeton.uz/api",
       headers: {
         "Content-Type": "application/json-patch+json",
         "Accept": "application/json",
@@ -99,20 +98,38 @@ class ApiClient {
   }
 
   Future<HomeResponse> fetchHome() async {
-    final response = await dio.get(
-      '/products/categories/getall?take=10',
-      options: Options(
-        headers: {
-          'accept': 'text/plain',
-          'Accept-Language': 'ru_RU',
-          // tokenni avtomatik qo‘shsa ham bo‘ladi
-        },
-      ),
-    );
+    try {
+      final response = await dio.get(
+        '/products/categories/getall?take=10',
+        options: Options(
+          headers: {
+            'accept': 'application/json',
+            'Accept-Language': 'uz_UZ',
+          },
+        ),
+      );
 
-    final data = response.data['data'];
-    return HomeResponse.fromJson(data);
+      print('API Response: ${response.data}'); // Debug uchun
+
+      // API response strukturasi: {"success": true, "data": {"list": [...], "pagination": {...}}}
+      if (response.data != null && response.data is Map<String, dynamic>) {
+        final responseData = response.data as Map<String, dynamic>;
+
+        if (responseData['success'] == true && responseData.containsKey('data')) {
+          final data = responseData['data'] as Map<String, dynamic>;
+          return HomeResponse.fromJson(data);
+        } else {
+          throw Exception('API dan xatolik: ${responseData['message'] ?? 'Noma\'lum xatolik'}');
+        }
+      }
+
+      throw Exception('Noto\'g\'ri API response formati');
+    } catch (e) {
+      print('API Error: $e'); // Debug uchun
+      rethrow;
+    }
   }
+
   Future<List<Map<String, dynamic>>> fetchOrders() async {
     final response = await dio.get("/orders");
     if (response.statusCode == 200) {
@@ -123,15 +140,77 @@ class ApiClient {
     }
   }
 
+  // Barcha mahsulotlarni olish
+  Future<List<Map<String, dynamic>>> fetchProducts() async {
+    try {
+      final response = await dio.get(
+        "/products/getall?take=30",
+        options: Options(
+          headers: {
+            'accept': 'application/json',
+            'Accept-Language': 'uz_UZ',
+          },
+        ),
+      );
 
+      if (response.statusCode == 200) {
+        final responseData = response.data as Map<String, dynamic>;
 
-  Future<List<dynamic>> fetchProducts() async {
-    final response = await dio.get("/products");
-    if (response.statusCode == 200) {
-      final data = response.data;
-      return data.map((e) => ProductModel.fromJson(e)).toList();
-    } else {
-      throw Exception("Productlarni olib kelishda hatolik bor");
+        if (responseData['success'] == true && responseData.containsKey('data')) {
+          final data = responseData['data'];
+
+          if (data is List) {
+            return data.cast<Map<String, dynamic>>();
+          } else if (data is Map<String, dynamic> && data.containsKey('list')) {
+            final list = data['list'] as List;
+            return list.cast<Map<String, dynamic>>();
+          }
+        }
+
+        throw Exception('API dan noto\'g\'ri format: ${responseData}');
+      } else {
+        throw Exception("HTTP Error: ${response.statusCode}");
+      }
+    } catch (e) {
+      throw Exception("Productlarni olib kelishda hatolik: $e");
+    }
+  }
+
+  // YANGI: Kategoriya bo'yicha mahsulotlarni olish
+  Future<List<Map<String, dynamic>>> fetchProductsByCategory(String categoryId) async {
+    try {
+      final response = await dio.get(
+        "/products/getall?categoryId=$categoryId&take=50",
+        options: Options(
+          headers: {
+            'accept': 'application/json',
+            'Accept-Language': 'uz_UZ',
+          },
+        ),
+      );
+
+      print('Category Products Response: ${response.data}'); // Debug uchun
+
+      if (response.statusCode == 200) {
+        final responseData = response.data as Map<String, dynamic>;
+
+        if (responseData['success'] == true && responseData.containsKey('data')) {
+          final data = responseData['data'];
+
+          if (data is List) {
+            return data.cast<Map<String, dynamic>>();
+          } else if (data is Map<String, dynamic> && data.containsKey('list')) {
+            final list = data['list'] as List;
+            return list.cast<Map<String, dynamic>>();
+          }
+        }
+
+        throw Exception('API dan noto\'g\'ri format: ${responseData}');
+      } else {
+        throw Exception("HTTP Error: ${response.statusCode}");
+      }
+    } catch (e) {
+      throw Exception("Kategoriya mahsulotlarini olishda xatolik: $e");
     }
   }
 
@@ -161,12 +240,38 @@ class ApiClient {
       throw Exception(responseData['message'] ?? 'Xatolik yuz berdi');
     }
   }
-  Future<dynamic>fetchSave({required String productId, required int quantity, required String state,})async{
-    final response = await dio.post("/orders/save",data: {
-      'productId': productId,
-      'quantity': quantity,
-      'state':state
-    });
+
+  Future<dynamic> fetchSave({
+    required String productId,
+    required int quantity,
+    required String state,
+  }) async {
+    final response = await dio.post("/orders/save", data: {'productId': productId, 'quantity': quantity, 'state': state});
     return response.data;
+  }
+
+  // Cart ma'lumotlarini olish
+  Future<Map<String, dynamic>> fetchCart() async {
+    try {
+      final response = await dio.get(
+        "/orders/cart",
+        options: Options(
+          headers: {
+            'accept': 'application/json',
+            'Accept-Language': 'uz_UZ',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = response.data as Map<String, dynamic>;
+        if (responseData['success'] == true) {
+          return responseData['data'] ?? {};
+        }
+      }
+      throw Exception("Cart ma'lumotlarini olishda xatolik");
+    } catch (e) {
+      throw Exception("Cart API xatoligi: $e");
+    }
   }
 }

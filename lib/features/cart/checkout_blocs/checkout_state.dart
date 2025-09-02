@@ -1,6 +1,4 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-
-import '../../../data/models/auth_models/checkout_model.dart';
 part 'checkout_state.freezed.dart';
 
 enum CheckoutStatus { idle, loading, success, submit,error }
