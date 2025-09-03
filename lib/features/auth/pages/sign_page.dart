@@ -323,7 +323,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         title: "Diqqat",
                         content: "Bu telefon raqami allaqachon ro'yxatdan o'tgan. Login sahifasiga o'ting.",
                         type: DialogType.warning,
-                        onConfirm: () => context.pushReplacement(Routes.login),
+                        onConfirm: () => context.pushReplacement(Routes.home),
                       );
                       break;
                     default:
