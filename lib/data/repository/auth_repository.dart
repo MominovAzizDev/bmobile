@@ -19,20 +19,19 @@ class AuthRepository {
     required String confirmPassword,
   }) async {
     try {
-      final cleanPhone = phone
-          .replaceAll(RegExp(r'[^\d]'), '') // Keep only digits
-          .trim();
+      // --- Robust Phone Number Formatting ---
+      String cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+      if (cleanPhone.length > 9) {
+        // Handle cases like +998..., 8..., or 0...
+        cleanPhone = cleanPhone.substring(cleanPhone.length - 9);
+      }
 
-      // Validate phone number format
-      if (cleanPhone.length < 9) {
+      if (cleanPhone.length != 9) {
+        // If after cleaning, the number is not 9 digits, it's invalid.
         return const Left(AuthError.invalidCredentials);
       }
-
-      // Ensure phone starts with country code (998 for Uzbekistan)
-      String formattedPhone = cleanPhone;
-      if (!cleanPhone.startsWith('998') && cleanPhone.length == 9) {
-        formattedPhone = '998$cleanPhone';
-      }
+      final formattedPhone = '998$cleanPhone';
+      // --- End of Formatting ---
 
       final result = await client.signUp(AuthModel(
         firstName: firstname.trim(),
@@ -74,26 +73,24 @@ class AuthRepository {
       await SecureStorage.deleteToken();
       await SecureStorage.deleteCredentials();
       
-      // Clean phone number - remove any spaces, brackets, dashes
-      final cleanPhone = login
-          .replaceAll(RegExp(r'[^\d]'), '') // Keep only digits
-          .trim();
-
       // Validate inputs
-      if (cleanPhone.isEmpty || password.trim().isEmpty) {
+      if (login.trim().isEmpty || password.trim().isEmpty) {
         return const Left(AuthError.invalidCredentials);
       }
 
-      // Validate phone number format
-      if (cleanPhone.length < 9) {
-        return const Left(AuthError.invalidCredentials);
+      // --- Robust Phone Number Formatting ---
+      String cleanPhone = login.replaceAll(RegExp(r'[^\d]'), '');
+      if (cleanPhone.length > 9) {
+        // Handle cases like +998..., 8..., or 0...
+        cleanPhone = cleanPhone.substring(cleanPhone.length - 9);
       }
 
-      // Ensure phone starts with country code (998 for Uzbekistan)
-      String formattedPhone = cleanPhone;
-      if (!cleanPhone.startsWith('998') && cleanPhone.length == 9) {
-        formattedPhone = '998$cleanPhone';
+      if (cleanPhone.length != 9) {
+        // If after cleaning, the number is not 9 digits, it's invalid.
+        return const Left(AuthError.invalidCredentials);
       }
+      final formattedPhone = '998$cleanPhone';
+      // --- End of Formatting ---
       
       final token = await client.login(formattedPhone, password.trim());
       
@@ -132,16 +129,19 @@ class AuthRepository {
 
   Future<Either<AuthError, String>> verification(String phone, String code) async {
     try {
-      // Clean phone number
-      final cleanPhone = phone
-          .replaceAll(RegExp(r'[^\d]'), '') // Keep only digits
-          .trim();
-
-      // Ensure phone starts with country code
-      String formattedPhone = cleanPhone;
-      if (!cleanPhone.startsWith('998') && cleanPhone.length == 9) {
-        formattedPhone = '998$cleanPhone';
+      // --- Robust Phone Number Formatting ---
+      String cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+      if (cleanPhone.length > 9) {
+        // Handle cases like +998..., 8..., or 0...
+        cleanPhone = cleanPhone.substring(cleanPhone.length - 9);
       }
+
+      if (cleanPhone.length != 9) {
+        // If after cleaning, the number is not 9 digits, it's invalid.
+        return const Left(AuthError.invalidCode); // Use invalidCode for verification context
+      }
+      final formattedPhone = '998$cleanPhone';
+      // --- End of Formatting ---
 
       final result = await client.verification(formattedPhone, code.trim());
       
