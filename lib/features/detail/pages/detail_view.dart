@@ -1,3 +1,5 @@
+import 'package:gazobeton/features/cart/bloc/cart_bloc.dart';
+import 'package:gazobeton/features/cart/bloc/cart_event.dart';
 import 'package:gazobeton/features/detail/bloc/product_bloc.dart';
 import 'package:gazobeton/features/detail/bloc/product_event.dart';
 import 'package:gazobeton/features/detail/bloc/product_state.dart';
@@ -228,12 +230,15 @@ class _DetailViewState extends State<DetailView> {
           return DetailBottomNavigationBar(
             callback: () {
               // Savatga qo'shish logikasi
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text("Mahsulot savatga qo'shildi"),
-                  backgroundColor: AppColors.mainColor,
-                ),
-              );
+              if (state is ProductDetailLoaded) {
+                context.read<CartBloc>().add(AddToCartEvent(state.product) as CartEvent);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("${state.product.translations.name['uz'] ?? 'Mahsulot'} savatga qo'shildi"),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
             },
             title: "Savatga qo'shish",
           );
@@ -241,6 +246,12 @@ class _DetailViewState extends State<DetailView> {
       ),
     );
   }
+}
+
+class AddToCartEvent {
+  final ProductModel product;
+
+  AddToCartEvent(this.product);
 }
 
 // Default rasmlar (agar API dan rasm kelmasa)

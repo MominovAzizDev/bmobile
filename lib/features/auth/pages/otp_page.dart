@@ -96,7 +96,7 @@ class _OtpPageState extends State<OtpPage> {
               title: "Eslatma",
               content: "Siz allaqachon ro‘yxatdan o‘tgansiz!",
               type: DialogType.warning,
-              onConfirm: () => context.pushReplacement(Routes.login),
+              onConfirm: () => context.pushReplacement(Routes.home),
             );
             break;
           default:
