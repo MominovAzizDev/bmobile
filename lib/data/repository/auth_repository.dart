@@ -163,37 +163,6 @@ class AuthRepository {
     }
   }
 
-  Future<Either<AuthError, bool>> refreshToken() async {
-    try {
-      final credentials = await SecureStorage.getCredentials();
-
-      final login = credentials['login'];
-      final password = credentials['password'];
-
-      if (login == null || password == null) {
-        return const Left(AuthError.userNotFound);
-      }
-
-      final token = await client.login(login, password);
-      if (token.isNotEmpty) {
-        jwt = token;
-        await SecureStorage.saveToken(token);
-        return const Right(true);
-      } else {
-        return const Left(AuthError.invalidCredentials);
-      }
-    } on UserNotFoundException {
-      return const Left(AuthError.userNotFound);
-    } on ApiException catch (e) {
-      if (e.statusCode == 400 || e.statusCode == 401) {
-        return const Left(AuthError.invalidCredentials);
-      }
-      return const Left(AuthError.serverError);
-    } catch (e) {
-      return const Left(AuthError.networkError);
-    }
-  }
-
   Future<bool> isLoggedIn() async {
     final token = await SecureStorage.getToken();
     return token != null && token.isNotEmpty;

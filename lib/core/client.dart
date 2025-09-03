@@ -23,26 +23,28 @@ class UserNotFoundException implements Exception {
 }
 
 class ApiClient {
-  final Dio dio =
-      Dio(
-          BaseOptions(
-            baseUrl: "https://api.bsgazobeton.uz/api",
-            connectTimeout: const Duration(seconds: 30),
-            receiveTimeout: const Duration(seconds: 30),
-            headers: {
-              "Content-Type": "application/json",
-              "Accept": "application/json",
-            },
-          ),
-        )
-        ..interceptors.addAll([
-          AuthInterceptor(),
-          LogInterceptor(
-            requestBody: true,
-            responseBody: true,
-            logPrint: (obj) => print(obj),
-          ),
-        ]);
+  late final Dio dio;
+
+  ApiClient() {
+    final baseOptions = BaseOptions(
+      baseUrl: "https://api.bsgazobeton.uz/api",
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+    );
+    dio = Dio(baseOptions);
+    dio.interceptors.addAll([
+      AuthInterceptor(dio),
+      LogInterceptor(
+        requestBody: true,
+        responseBody: true,
+        logPrint: (obj) => print(obj),
+      ),
+    ]);
+  }
 
   // ================= AUTH METHODS =================
   Future<String> signUp(AuthModel model) async {
