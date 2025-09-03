@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:gazobeton/core/servises/interseptors.dart';
+import 'package:gazobeton/core/services/interceptors.dart';
 import 'package:gazobeton/data/models/auth_models/auth_model.dart';
 import '../data/models/auth_models/home_model.dart';
 
