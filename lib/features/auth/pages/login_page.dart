@@ -75,7 +75,6 @@ class _LoginPageState extends State<LoginPage> {
         child: Form(
           key: _formKey,
           child: Column(
-            spacing: 10.h,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Center(child: AppImage(imageUrl: AppIcons.logo)),

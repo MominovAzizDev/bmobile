@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:gazobeton/core/client.dart';
 import 'package:gazobeton/core/error/failure.dart' hide UserNotFoundException;
-import 'package:gazobeton/core/servises/secure_storage.dart';
+import 'package:gazobeton/core/services/secure_storage.dart';
 import 'package:gazobeton/data/models/auth_models/auth_model.dart';
 
 class AuthRepository {

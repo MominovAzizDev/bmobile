@@ -17,7 +17,6 @@ class AuthInterceptor extends Interceptor {
   }
 
   @override
-  @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (err.response?.statusCode == 401) {
       final result = await navigatorKey.currentContext!.read<AuthRepository>().refreshToken();
