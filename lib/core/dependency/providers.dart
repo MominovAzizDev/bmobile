@@ -38,13 +38,17 @@ List<SingleChildWidget> providers = [
     create: (context) => OrdersRepository(client: context.read<ApiClient>()),
   ),
   BlocProvider(
-    create: (context) => OrdersBloc(repo: context.read<OrdersRepository>()),
+    create: (context) => OrdersBloc(
+      cartBloc: context.read<CartBloc>(), 
+      repo: context.read<OrdersRepository>()),
   ),
   Provider(
     create: (context) => CheckoutRepository(client: context.read<ApiClient>()),
   ),
   BlocProvider(
     create: (context) => CheckoutBloc(
+      ordersBloc: context.read<OrdersBloc>(),
+      cartBloc: context.read<CartBloc>(),
       repo: context.read<CheckoutRepository>(),
     ),
   ),

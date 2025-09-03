@@ -1,4 +1,5 @@
 class ProductModel {
+  final String id;
   final double price;
   final String unit;
   final Translations translations;
@@ -6,6 +7,7 @@ class ProductModel {
   final String productCategoryId;
 
   ProductModel({
+    required this.id,
     required this.price,
     required this.unit,
     required this.translations,
@@ -16,6 +18,7 @@ class ProductModel {
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     try {
       return ProductModel(
+        id: _parseString(json['id']),
         price: _parseDouble(json['price']),
         unit: _parseString(json['unit']),
         translations: json['translations'] != null 

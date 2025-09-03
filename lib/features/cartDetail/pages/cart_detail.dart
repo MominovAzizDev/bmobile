@@ -1,4 +1,5 @@
 import '../../../core/exports.dart';
+
 class CartDetail extends StatefulWidget {
   const CartDetail({super.key});
 
@@ -11,10 +12,11 @@ class _CartDetailState extends State<CartDetail> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController(); // ✅ yangi email controller
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<CheckoutBloc, CheckoutState>( // BlocListener qo'shish
+    return BlocListener<CheckoutBloc, CheckoutState>(
       listener: (context, state) {
         if (state.status == CheckoutStatus.loading) {
           showDialog(
@@ -125,6 +127,35 @@ class _CartDetailState extends State<CartDetail> {
                   },
                 ),
 
+                SizedBox(height: 16.h),
+
+                // ✅ Email
+                AppText(
+                  text: "Email",
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  color: AppColors.textBlackColor,
+                ),
+                SizedBox(height: 8.h),
+                TextFormField(
+                  controller: _emailController,
+                  decoration: InputDecoration(
+                    hintText: "Emailingizni kiriting",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value?.trim().isEmpty ?? true) {
+                      return "Email kiritish majburiy";
+                    }
+                    if (!value!.contains('@')) {
+                      return "To'g'ri email kiriting";
+                    }
+                    return null;
+                  },
+                ),
+
                 SizedBox(height: 32.h),
 
                 // Submit tugmasi
@@ -133,14 +164,13 @@ class _CartDetailState extends State<CartDetail> {
                   child: ElevatedButton(
                     onPressed: () {
                       if (_formKey.currentState?.validate() ?? false) {
-                        // Buyurtma yuborish logikasi CheckoutBloc orqali
                         context.read<CheckoutBloc>().add(
                           CheckoutSubmitted(
                             fullName: _nameController.text.trim(),
                             phoneNumber: _phoneController.text.trim(),
                             address: _addressController.text.trim(),
-                            email: "no-email@example.com", // Agar bu joyda email yo'q bo'lsa, default qiymat berish kerak.
-                            isDeliverable: true, // Ushbu formadan yetkazib berish bo'lsa
+                            email: _emailController.text.trim(), // ✅ kiritilgan email ishlatiladi
+                            isDeliverable: true,
                           ),
                         );
                       }
@@ -173,6 +203,7 @@ class _CartDetailState extends State<CartDetail> {
     _nameController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
+    _emailController.dispose(); // ✅ email controller ham dispose qilinadi
     super.dispose();
   }
 }

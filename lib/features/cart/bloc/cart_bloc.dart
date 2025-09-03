@@ -19,7 +19,6 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       final cartData = await _repo.getCart();
       final items = <CartItem>[];
 
-      // API response formatini tekshirish
       if (cartData is Map) {
         List? itemsList;
 

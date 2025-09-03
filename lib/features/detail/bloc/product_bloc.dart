@@ -33,8 +33,8 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
     try {
       final products = await repository.fetchProduct();
       final product = products.firstWhere(
-        (p) => p.productCategoryId == event.productId,
-        orElse: () => products.first,
+        (p) => p.id == event.productId, 
+        orElse: () => throw Exception('Mahsulot topilmadi'),
       );
       emit(ProductDetailLoaded(product));
     } catch (e) {
@@ -49,14 +49,16 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
   ) async {
     emit(ProductLoading());
     try {
-      final products = await repository.fetchProductsByCategory(event.categoryId);
+      final products =
+          await repository.fetchProductsByCategory(event.categoryId);
       if (products.isNotEmpty) {
         emit(ProductLoaded(products));
       } else {
         emit(ProductError('Bu kategoriyada mahsulotlar topilmadi'));
       }
     } catch (e) {
-      emit(ProductError('Kategoriya mahsulotlarini yuklashda xatolik: ${e.toString()}'));
+      emit(ProductError(
+          'Kategoriya mahsulotlarini yuklashda xatolik: ${e.toString()}'));
     }
   }
 }

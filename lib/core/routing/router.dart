@@ -1,5 +1,10 @@
 import "package:gazobeton/core/exports.dart";
 
+bool _isAuthenticated(BuildContext context) {
+  final authState = context.read<AuthBloc>().state;
+  return authState is AuthAuthenticated;
+}
+
 GoRouter router = GoRouter(
   navigatorKey: navigatorKey,
   initialLocation: Routes.home,
@@ -18,10 +23,16 @@ GoRouter router = GoRouter(
         GoRoute(
           path: Routes.cart,
           builder: (context, state) => CartView(),
+          redirect: (context, state) {
+            return _isAuthenticated(context) ? null : Routes.login;
+          },
         ),
         GoRoute(
           path: Routes.orders,
           builder: (context, state) => OrdersView(),
+          redirect: (context, state) {
+            return _isAuthenticated(context) ? null : Routes.login;
+          },
         ),
         GoRoute(
           path: Routes.profile,

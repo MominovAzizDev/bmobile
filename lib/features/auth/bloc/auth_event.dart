@@ -33,3 +33,4 @@ final class SignUpSubmitted extends AuthEvent {
 final class LogoutSubmitted extends AuthEvent {}
 
 final class CheckAuthStatus extends AuthEvent {}
+
