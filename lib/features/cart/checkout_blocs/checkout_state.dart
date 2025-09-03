@@ -1,18 +1,14 @@
+// lib/features/checkout/bloc/checkout_state.dart
 import 'package:freezed_annotation/freezed_annotation.dart';
 part 'checkout_state.freezed.dart';
 
-enum CheckoutStatus { idle, loading, success, submit,error }
+enum CheckoutStatus { idle, loading, success, error }
 
 @freezed
 abstract class CheckoutState with _$CheckoutState {
   const factory CheckoutState({
-    required CheckoutStatus status,
-
+    @Default(CheckoutStatus.idle) CheckoutStatus status,
   }) = _CheckoutState;
 
-  factory CheckoutState.initial() {
-    return const CheckoutState(
-      status: CheckoutStatus.idle,
-    );
-  }
+  factory CheckoutState.initial() => const CheckoutState();
 }

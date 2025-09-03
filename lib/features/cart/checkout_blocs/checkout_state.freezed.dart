@@ -206,10 +206,10 @@ return $default(_that.status);case _:
 
 
 class _CheckoutState implements CheckoutState {
-  const _CheckoutState({required this.status});
+  const _CheckoutState({this.status = CheckoutStatus.idle});
   
 
-@override final  CheckoutStatus status;
+@override@JsonKey() final  CheckoutStatus status;
 
 /// Create a copy of CheckoutState
 /// with the given fields replaced by the non-null parameter values.

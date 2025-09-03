@@ -16,7 +16,6 @@ class _CartViewState extends State<CartView> {
   @override
   void initState() {
     super.initState();
-    // Cart ma'lumotlarini yuklash
     context.read<CartBloc>().add(CartLoaded());
   }
 
@@ -41,8 +40,8 @@ class _CartViewState extends State<CartView> {
                     color: AppColors.textBlackColor,
                   ),
                 ),
-                
-                // Loading holatda
+
+                /// Loading holati
                 if (state.status == CartStatus.loading)
                   SliverFillRemaining(
                     hasScrollBody: false,
@@ -52,8 +51,8 @@ class _CartViewState extends State<CartView> {
                       ),
                     ),
                   )
-                
-                // Error holatda  
+
+                /// Error holati
                 else if (state.status == CartStatus.error)
                   SliverFillRemaining(
                     hasScrollBody: false,
@@ -73,7 +72,10 @@ class _CartViewState extends State<CartView> {
                               context.read<CartBloc>().add(CartLoaded());
                             },
                             child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 20.w,
+                                vertical: 10.h,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.mainColor,
                                 borderRadius: BorderRadius.circular(10.r),
@@ -89,8 +91,8 @@ class _CartViewState extends State<CartView> {
                       ),
                     ),
                   )
-                
-                // Cart bo'sh
+
+                /// Cart bo‘sh bo‘lsa
                 else if (state.items.isEmpty)
                   SliverFillRemaining(
                     hasScrollBody: false,
@@ -103,11 +105,14 @@ class _CartViewState extends State<CartView> {
                       ),
                     ),
                   )
-                
-                // Cart ma'lumotlari
+
+                /// Agar itemlar bo‘lsa
                 else ...[
                   SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 15,
+                      vertical: 10,
+                    ),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
@@ -123,25 +128,25 @@ class _CartViewState extends State<CartView> {
                               minus: () {
                                 if (item.quantity > 1) {
                                   context.read<CartBloc>().add(
-                                    CartItemQuantityUpdated(
-                                      productId: item.productId,
-                                      quantity: item.quantity - 1,
-                                    ),
-                                  );
+                                        CartItemQuantityUpdated(
+                                          productId: item.productId,
+                                          quantity: item.quantity - 1,
+                                        ),
+                                      );
                                 }
                               },
                               plus: () {
                                 context.read<CartBloc>().add(
-                                  CartItemQuantityUpdated(
-                                    productId: item.productId,
-                                    quantity: item.quantity + 1,
-                                  ),
-                                );
+                                      CartItemQuantityUpdated(
+                                        productId: item.productId,
+                                        quantity: item.quantity + 1,
+                                      ),
+                                    );
                               },
                               delete: () {
                                 context.read<CartBloc>().add(
-                                  CartItemRemoved(productId: item.productId),
-                                );
+                                      CartItemRemoved(productId: item.productId),
+                                    );
                               },
                             ),
                           );
@@ -150,13 +155,16 @@ class _CartViewState extends State<CartView> {
                       ),
                     ),
                   ),
+
+                  /// Umumiy narx
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.only(right: 15),
                       child: Align(
                         alignment: Alignment.centerRight,
                         child: AppText(
-                          text: "Umumiy: ${state.totalPrice.toStringAsFixed(0)} UZS",
+                          text:
+                              "Umumiy: ${state.totalPrice.toStringAsFixed(0)} UZS",
                           fontWeight: FontWeight.w700,
                           fontSize: 16,
                           color: AppColors.textGrey,
@@ -164,12 +172,15 @@ class _CartViewState extends State<CartView> {
                       ),
                     ),
                   ),
+
                   SliverToBoxAdapter(child: SizedBox(height: 16.h)),
-                ]
+                ],
               ],
             );
           },
         ),
+
+        /// Bottom nav bar
         bottomNavigationBar: BlocBuilder<CartBloc, CartState>(
           builder: (context, state) {
             return state.items.isNotEmpty
@@ -179,7 +190,7 @@ class _CartViewState extends State<CartView> {
                     },
                     title: "Buyurtmani rasmiylashtirish",
                   )
-                : null;
+                : const SizedBox.shrink();
           },
         ),
       ),

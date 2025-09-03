@@ -45,7 +45,6 @@ export 'package:gazobeton/features/detail/widget/detail_item.dart';
 export 'package:gazobeton/features/detail/widget/product_about.dart';
 export "package:gazobeton/features/language/pages/language_page.dart";
 export 'package:gazobeton/core/client.dart';
-export '../../core/error/failure.dart';
 export '../../core/servises/secure_storage.dart';
 export "package:flutter_bloc/flutter_bloc.dart";
 export "package:gazobeton/features/auth/bloc/auth_bloc.dart";

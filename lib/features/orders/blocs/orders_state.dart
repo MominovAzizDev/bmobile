@@ -1,4 +1,5 @@
 import '../../../core/exports.dart';
+
 part 'orders_state.freezed.dart';
 
 enum OrdersStatus { error, loading, idle }
@@ -8,9 +9,13 @@ abstract class OrdersState with _$OrdersState {
   const factory OrdersState({
     required List<OrdersModel> model,
     required OrdersStatus status,
+    String? errorMessage,
   }) = _OrdersState;
 
   factory OrdersState.initial() {
-    return OrdersState(model: [], status: OrdersStatus.loading);
+    return const OrdersState(
+      model: [],
+      status: OrdersStatus.loading,
+    );
   }
 }

@@ -5,7 +5,6 @@ final class CheckoutSubmitted extends CheckoutEvent {
   final String phoneNumber;
   final String address;
   final String email;
-
   final bool isDeliverable;
 
   CheckoutSubmitted({

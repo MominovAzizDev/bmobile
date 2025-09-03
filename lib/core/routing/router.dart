@@ -33,7 +33,7 @@ GoRouter router = GoRouter(
       path: Routes.signUp,
       builder: (context, state) => BlocProvider(
         create: (context) => AuthBloc(
-          repository: context.read(),
+          repository: context.read<AuthRepository>(),
         ),
         child: SignUpPage(),
       ),
@@ -46,7 +46,7 @@ GoRouter router = GoRouter(
       path: Routes.login,
       builder: (context, state) => BlocProvider(
         create: (context) => AuthBloc(
-          repository: context.read(),
+          repository: context.read<AuthRepository>(),
         ),
         child: LoginPage(),
       ),
@@ -69,7 +69,7 @@ GoRouter router = GoRouter(
         final phone = state.extra as String;
         return BlocProvider(
           create: (context) => AuthBloc(
-            repository: context.read(),
+            repository: context.read<AuthRepository>(),
           ),
           child: OtpPage(
             phoneNumber: phone,

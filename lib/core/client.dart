@@ -1,23 +1,50 @@
 import 'package:dio/dio.dart';
-import 'package:gazobeton/core/exports.dart';
 import 'package:gazobeton/core/servises/interseptors.dart';
 import 'package:gazobeton/data/models/auth_models/auth_model.dart';
 import '../data/models/auth_models/home_model.dart';
 
-class ApiClient {
-  final Dio dio = Dio(
-    BaseOptions(
-      baseUrl: "https://api.bsgazobeton.uz/api",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      },
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
-    ),
-  )..interceptors.add(AuthInterceptor());
+class ApiException implements Exception {
+  final String message;
+  final int? statusCode;
 
-  // Auth metodlari - oldingi kabi qoladi
+  ApiException(this.message, {this.statusCode});
+
+  @override
+  String toString() => "ApiException: $message (Status: $statusCode)";
+}
+
+class UserNotFoundException implements Exception {
+  final String message;
+
+  UserNotFoundException(this.message);
+
+  @override
+  String toString() => "UserNotFoundException: $message";
+}
+
+class ApiClient {
+  final Dio dio =
+      Dio(
+          BaseOptions(
+            baseUrl: "https://api.bsgazobeton.uz/api",
+            connectTimeout: const Duration(seconds: 30),
+            receiveTimeout: const Duration(seconds: 30),
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json",
+            },
+          ),
+        )
+        ..interceptors.addAll([
+          AuthInterceptor(),
+          LogInterceptor(
+            requestBody: true,
+            responseBody: true,
+            logPrint: (obj) => print(obj),
+          ),
+        ]);
+
+  // ================= AUTH METHODS =================
   Future<String> signUp(AuthModel model) async {
     try {
       final response = await dio.post(
@@ -29,25 +56,39 @@ class ApiClient {
         final data = response.data;
         final success = data["success"] == true;
         final code = data["code"]?.toString() ?? "";
+        final message = data["message"]?.toString() ?? "";
 
         if (success) {
           return "success";
-        } else if (code.contains("Foydalanuvchi topilmadi")) {
+        } else if (code.contains("allaqachon") || message.contains("allaqachon") || code.contains("Foydalanuvchi topilmadi")) {
           return "already_registered";
         } else {
-          return "error";
+          throw ApiException(
+            message.isNotEmpty ? message : "Ro'yxatdan o'tishda xatolik",
+            statusCode: response.statusCode,
+          );
         }
       } else {
-        return "error";
+        throw ApiException(
+          "Ro'yxatdan o'tishda HTTP xatoligi",
+          statusCode: response.statusCode,
+        );
       }
     } on DioException catch (e) {
-      final code = e.response?.data["code"]?.toString() ?? "";
-      if (e.response?.statusCode == 409 || e.response?.statusCode == 400) {
-        if (code.contains("Foydalanuvchi topilmadi")) {
+      final data = e.response?.data;
+      if (data != null && data is Map<String, dynamic>) {
+        final code = data["code"]?.toString() ?? "";
+        final message = data["message"]?.toString() ?? "";
+
+        if (e.response?.statusCode == 409 || e.response?.statusCode == 400 || code.contains("allaqachon") || message.contains("allaqachon")) {
           return "already_registered";
         }
       }
-      return "error";
+
+      throw ApiException(
+        e.response?.data?["message"] ?? e.message ?? "Tarmoq xatoligi",
+        statusCode: e.response?.statusCode,
+      );
     }
   }
 
@@ -61,23 +102,46 @@ class ApiClient {
         },
       );
 
-      final data = response.data as Map<String, dynamic>;
-
       if (response.statusCode == 200) {
+        final data = response.data as Map<String, dynamic>;
+
         if (data["success"] == true && data["data"] != null) {
-          return data["data"]["token"];
-        } else {
-          final errorCode = data["code"];
-          if (errorCode == "Telefon raqami yoki parol noto'g'ri" || errorCode == "Telefon raqami tasdiqlanmagan") {
-            throw UserNotFoundException();
+          final token = data["data"]["token"];
+          if (token != null && token.toString().isNotEmpty) {
+            return token.toString();
           }
-          throw Exception("Login xatoligi: $errorCode");
         }
+
+        final errorCode = data["code"]?.toString() ?? "";
+        final errorMessage = data["message"]?.toString() ?? "";
+
+        if (errorCode.contains("noto'g'ri") || errorCode.contains("Telefon raqami yoki parol noto'g'ri") || errorMessage.contains("noto'g'ri")) {
+          throw UserNotFoundException("Login yoki parol noto'g'ri");
+        } else if (errorCode.contains("tasdiqlanmagan") || errorCode.contains("Telefon raqami tasdiqlanmagan")) {
+          throw ApiException("Telefon raqami tasdiqlanmagan", statusCode: 403);
+        }
+
+        throw ApiException("Login xatoligi: $errorCode", statusCode: response.statusCode);
       } else {
-        throw Exception("HTTP xatoligi: ${response.statusCode}");
+        throw ApiException("HTTP xatoligi", statusCode: response.statusCode);
       }
     } on DioException catch (e) {
-      throw Exception("Login API xatoligi: ${e.message}");
+      final data = e.response?.data;
+      if (data != null && data is Map<String, dynamic>) {
+        final code = data["code"]?.toString() ?? "";
+        final message = data["message"]?.toString() ?? "";
+
+        if (code.contains("noto'g'ri") || message.contains("noto'g'ri")) {
+          throw UserNotFoundException("Login yoki parol noto'g'ri");
+        } else if (code.contains("tasdiqlanmagan") || message.contains("tasdiqlanmagan")) {
+          throw ApiException("Telefon raqami tasdiqlanmagan", statusCode: 403);
+        }
+      }
+
+      throw ApiException(
+        e.response?.data?["message"] ?? e.message ?? "Tarmoq xatoligi",
+        statusCode: e.response?.statusCode,
+      );
     }
   }
 
@@ -95,19 +159,24 @@ class ApiClient {
         final data = response.data;
         if (data["success"] == true) {
           return "verified";
-        } else if (data["code"] == "Telefon raqami allaqachon tasdiqlangan") {
-          return "already_verified";
         } else {
+          final errorCode = data["code"]?.toString() ?? "";
+          if (errorCode.contains("allaqachon tasdiqlangan") || errorCode.contains("Telefon raqami allaqachon tasdiqlangan")) {
+            return "already_verified";
+          }
           return null;
         }
       }
       return null;
     } on DioException catch (e) {
-      print('Verification error: $e');
-      return null;
+      throw ApiException(
+        e.response?.data?["message"] ?? e.message ?? "Tasdiqlash xatoligi",
+        statusCode: e.response?.statusCode,
+      );
     }
   }
 
+  // ================= HOME =================
   Future<HomeResponse> fetchHome() async {
     try {
       final response = await dio.get(
@@ -130,16 +199,33 @@ class ApiClient {
           throw Exception('API dan xatolik: ${responseData['message'] ?? 'Noma\'lum xatolik'}');
         }
       }
-
       throw Exception('Noto\'g\'ri API response formati');
-    } on DioException catch (e) {
-      throw Exception('Home API xatoligi: ${e.message}');
+    } catch (e) {
+      rethrow;
     }
   }
 
-  Future<List<Map<String, dynamic>>> fetchOrders() async {
+  // ================= ORDERS =================
+  Future<List<Map<String, dynamic>>> fetchOrders({
+    int? page,
+    int? take,
+  }) async {
     try {
-      final response = await dio.get("/orders");
+      final queryParams = <String, dynamic>{};
+      if (page != null) queryParams['page'] = page;
+      if (take != null) queryParams['take'] = take;
+
+      final response = await dio.get(
+        "/orders",
+        queryParameters: queryParams,
+        options: Options(
+          headers: {
+            'accept': 'application/json',
+            'Accept-Language': 'uz_UZ',
+          },
+        ),
+      );
+
       if (response.statusCode == 200) {
         final responseData = response.data as Map<String, dynamic>;
         if (responseData['success'] == true && responseData.containsKey('data')) {
@@ -147,12 +233,90 @@ class ApiClient {
           if (data is Map<String, dynamic> && data.containsKey('list')) {
             final list = data['list'] as List;
             return list.cast<Map<String, dynamic>>();
+          } else if (data is List) {
+            return data.cast<Map<String, dynamic>>();
           }
         }
+        throw ApiException('Orders ma\'lumotlari noto\'g\'ri formatda', statusCode: response.statusCode);
+      } else {
+        throw ApiException("Orders olishda HTTP xatoligi", statusCode: response.statusCode);
       }
-      throw Exception("Orders API format xatoligi");
     } on DioException catch (e) {
-      throw Exception("Orders API xatoligi: ${e.message}");
+      throw ApiException(
+        e.response?.data?["message"] ?? e.message ?? "Orderlarni olishda tarmoq xatoligi",
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>> createOrder() async {
+    try {
+      final response = await dio.post(
+        "/orders",
+        options: Options(
+          headers: {
+            'accept': 'application/json',
+            'Accept-Language': 'uz_UZ',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = response.data as Map<String, dynamic>;
+        if (responseData['success'] == true) {
+          return responseData['data'] ?? {};
+        } else {
+          throw ApiException(responseData['message'] ?? 'Order yaratishda xatolik', statusCode: response.statusCode);
+        }
+      } else {
+        throw ApiException("Order yaratishda HTTP xatoligi", statusCode: response.statusCode);
+      }
+    } on DioException catch (e) {
+      throw ApiException(
+        e.response?.data?["message"] ?? e.message ?? "Order yaratishda tarmoq xatoligi",
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>> updateOrder({
+    required String orderId,
+    String? status,
+    String? address,
+    bool? isDeliverable,
+  }) async {
+    try {
+      final Map<String, dynamic> updateData = {};
+      if (status != null) updateData['status'] = status;
+      if (address != null) updateData['address'] = address;
+      if (isDeliverable != null) updateData['isDeliverable'] = isDeliverable;
+
+      final response = await dio.put(
+        "/orders/$orderId",
+        data: updateData,
+        options: Options(
+          headers: {
+            'accept': 'application/json',
+            'Accept-Language': 'uz_UZ',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = response.data as Map<String, dynamic>;
+        if (responseData['success'] == true) {
+          return responseData['data'] ?? {};
+        } else {
+          throw ApiException(responseData['message'] ?? 'Order yangilashda xatolik', statusCode: response.statusCode);
+        }
+      } else {
+        throw ApiException("Order yangilashda HTTP xatoligi", statusCode: response.statusCode);
+      }
+    } on DioException catch (e) {
+      throw ApiException(
+        e.response?.data?["message"] ?? e.message ?? "Order yangilashda tarmoq xatoligi",
+        statusCode: e.response?.statusCode,
+      );
     }
   }
 
@@ -170,10 +334,8 @@ class ApiClient {
 
       if (response.statusCode == 200) {
         final responseData = response.data as Map<String, dynamic>;
-
         if (responseData['success'] == true && responseData.containsKey('data')) {
           final data = responseData['data'];
-
           if (data is List) {
             return data.cast<Map<String, dynamic>>();
           } else if (data is Map<String, dynamic> && data.containsKey('list')) {
@@ -181,13 +343,12 @@ class ApiClient {
             return list.cast<Map<String, dynamic>>();
           }
         }
-
         throw Exception('API dan noto\'g\'ri format: ${responseData}');
       } else {
         throw Exception("HTTP Error: ${response.statusCode}");
       }
-    } on DioException catch (e) {
-      throw Exception("Products API xatoligi: ${e.message}");
+    } catch (e) {
+      throw Exception("Productlarni olib kelishda hatolik: $e");
     }
   }
 
@@ -205,10 +366,8 @@ class ApiClient {
 
       if (response.statusCode == 200) {
         final responseData = response.data as Map<String, dynamic>;
-
         if (responseData['success'] == true && responseData.containsKey('data')) {
           final data = responseData['data'];
-
           if (data is List) {
             return data.cast<Map<String, dynamic>>();
           } else if (data is Map<String, dynamic> && data.containsKey('list')) {
@@ -216,66 +375,15 @@ class ApiClient {
             return list.cast<Map<String, dynamic>>();
           }
         }
-
         throw Exception('API dan noto\'g\'ri format: ${responseData}');
       } else {
         throw Exception("HTTP Error: ${response.statusCode}");
       }
-    } on DioException catch (e) {
-      throw Exception("Category products API xatoligi: ${e.message}");
+    } catch (e) {
+      throw Exception("Kategoriya mahsulotlarini olishda xatolik: $e");
     }
   }
 
-  Future<Map<String, dynamic>> fetchCart() async {
-    try {
-      final response = await dio.get(
-        "/orders/cart",
-        options: Options(
-          headers: {
-            'accept': 'application/json',
-            'Accept-Language': 'uz_UZ',
-          },
-        ),
-      );
-
-      if (response.statusCode == 200) {
-        final responseData = response.data as Map<String, dynamic>;
-
-        if (responseData['success'] == true) {
-          // API response formatini tekshirish
-          final data = responseData['data'];
-
-          if (data == null) {
-            return {'items': [], 'totalPrice': 0.0};
-          }
-
-          if (data is Map<String, dynamic>) {
-            return {
-              'items': data['items'] ?? [],
-              'totalPrice': (data['totalPrice'] ?? 0).toDouble(),
-            };
-          } else if (data is List) {
-            // Agar data to'g'ridan-to'g'ri list bo'lsa
-            return {
-              'items': data,
-              'totalPrice': 0.0, // Har bir itemdan hisoblanadi
-            };
-          }
-        }
-
-        throw Exception("Cart API: ${responseData['message'] ?? 'Noto\'g\'ri format'}");
-      }
-
-      throw Exception("Cart API HTTP xatoligi: ${response.statusCode}");
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 401) {
-        throw Exception("Avtorizatsiya kerak");
-      }
-      throw Exception("Cart API xatoligi: ${e.message}");
-    }
-  }
-
-  // TUZATILGAN: Cart ga saqlash
   Future<Map<String, dynamic>> fetchSave({
     required String productId,
     required int quantity,
@@ -299,24 +407,47 @@ class ApiClient {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = response.data as Map<String, dynamic>;
-
         if (responseData['success'] == true) {
-          return responseData;
+          return responseData['data'] ?? {};
         } else {
-          throw Exception("Save API: ${responseData['message'] ?? 'Saqlashda xatolik'}");
+          throw ApiException(responseData['message'] ?? 'Cart yangilashda xatolik', statusCode: response.statusCode);
         }
+      } else {
+        throw ApiException('HTTP Error: ${response.statusCode}', statusCode: response.statusCode);
       }
-
-      throw Exception("Save API HTTP xatoligi: ${response.statusCode}");
     } on DioException catch (e) {
-      if (e.response?.statusCode == 401) {
-        throw Exception("Avtorizatsiya kerak");
+      if (e.response?.data != null) {
+        final errorData = e.response!.data as Map<String, dynamic>;
+        throw ApiException(errorData['message'] ?? 'Server xatoligi', statusCode: e.response?.statusCode);
       }
-      throw Exception("Save API xatoligi: ${e.message}");
+      throw ApiException('Tarmoq xatoligi: ${e.message}', statusCode: e.response?.statusCode);
     }
   }
 
-  // TUZATILGAN: Checkout
+  Future<Map<String, dynamic>> fetchCart() async {
+    try {
+      final response = await dio.get(
+        "/orders/cart",
+        options: Options(
+          headers: {
+            'accept': 'application/json',
+            'Accept-Language': 'uz_UZ',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = response.data as Map<String, dynamic>;
+        if (responseData['success'] == true) {
+          return responseData['data'] ?? {};
+        }
+      }
+      throw ApiException("Cart ma'lumotlarini olishda xatolik");
+    } catch (e) {
+      throw ApiException("Cart API xatoligi: $e");
+    }
+  }
+
   Future<Map<String, dynamic>> fetchCheckout({
     required String fullName,
     required String phoneNumber,
@@ -326,7 +457,7 @@ class ApiClient {
   }) async {
     try {
       final response = await dio.post(
-        '/orders',
+        "/orders/checkout",
         data: {
           'fullName': fullName,
           'phoneNumber': phoneNumber,
@@ -344,17 +475,25 @@ class ApiClient {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = response.data as Map<String, dynamic>;
-
         if (responseData['success'] == true) {
-          return responseData;
+          return responseData['data'] ?? {};
         } else {
-          throw Exception(responseData['message'] ?? 'Checkout da xatolik');
+          throw ApiException(
+            responseData['message'] ?? 'Checkout jarayonida xatolik',
+            statusCode: response.statusCode,
+          );
         }
+      } else {
+        throw ApiException(
+          'Checkout HTTP xatoligi',
+          statusCode: response.statusCode,
+        );
       }
-
-      throw Exception('Checkout HTTP xatoligi: ${response.statusCode}');
     } on DioException catch (e) {
-      throw Exception('Checkout API xatoligi: ${e.message}');
+      throw ApiException(
+        e.response?.data?["message"] ?? e.message ?? "Checkout tarmoq xatoligi",
+        statusCode: e.response?.statusCode,
+      );
     }
   }
 }

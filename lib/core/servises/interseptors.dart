@@ -24,7 +24,7 @@ class AuthInterceptor extends Interceptor {
 
       return result.fold(
         (error) async {
-          await navigatorKey.currentContext!.read<AuthRepository>().logout();
+          await navigatorKey.currentContext!.read<AuthRepository>();
           navigatorKey.currentContext!.go(Routes.login);
           return handler.reject(err);
         },

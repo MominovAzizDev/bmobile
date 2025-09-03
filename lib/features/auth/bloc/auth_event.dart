@@ -4,20 +4,14 @@ final class LoginSubmitted extends AuthEvent {
   final String login;
   final String password;
 
-  LoginSubmitted({
-    required this.login,
-    required this.password,
-  });
+  LoginSubmitted({required this.login, required this.password});
 }
 
 final class VerifySubmitted extends AuthEvent {
   final String phone;
   final String code;
 
-  VerifySubmitted({
-    required this.phone,
-    required this.code,
-  });
+  VerifySubmitted({required this.phone, required this.code});
 }
 
 final class SignUpSubmitted extends AuthEvent {
@@ -35,3 +29,7 @@ final class SignUpSubmitted extends AuthEvent {
     required this.confirmPassword,
   });
 }
+
+final class LogoutSubmitted extends AuthEvent {}
+
+final class CheckAuthStatus extends AuthEvent {}

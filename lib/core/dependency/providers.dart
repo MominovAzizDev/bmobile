@@ -11,7 +11,7 @@ List<SingleChildWidget> providers = [
   ),
   Provider(
     create: (context) => AuthRepository(
-      client: context.read(),
+      client: context.read<ApiClient>(),
     ),
   ),
   RepositoryProvider<HomeRepository>(
@@ -31,27 +31,27 @@ List<SingleChildWidget> providers = [
   ),
   BlocProvider(
     create: (context) => HomeBloc(
-      repo: context.read(),
+      repo: context.read<HomeRepository>(),
     ),
   ),
   Provider(
-    create: (context) => OrdersRepository(client: context.read()),
+    create: (context) => OrdersRepository(client: context.read<ApiClient>()),
   ),
   BlocProvider(
-    create: (context) => OrdersBloc(repo: context.read()),
+    create: (context) => OrdersBloc(repo: context.read<OrdersRepository>()),
   ),
   Provider(
-    create: (context) => CheckoutRepository(client: context.read()),
+    create: (context) => CheckoutRepository(client: context.read<ApiClient>()),
   ),
   BlocProvider(
     create: (context) => CheckoutBloc(
-      repo: context.read(),
+      repo: context.read<CheckoutRepository>(),
     ),
   ),
   Provider(
-    create: (context) => CartRepository(client: context.read()),
+    create: (context) => CartRepository(client: context.read<ApiClient>()),
   ),
   BlocProvider(
-    create: (context) => CartBloc(repo: context.read()),
+    create: (context) => CartBloc(repo: context.read<CartRepository>()),
   ),
 ];

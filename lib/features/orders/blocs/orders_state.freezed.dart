@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$OrdersState {
 
- List<OrdersModel> get model; OrdersStatus get status;
+ List<OrdersModel> get model; OrdersStatus get status; String? get errorMessage;
 /// Create a copy of OrdersState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $OrdersStateCopyWith<OrdersState> get copyWith => _$OrdersStateCopyWithImpl<Orde
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is OrdersState&&const DeepCollectionEquality().equals(other.model, model)&&(identical(other.status, status) || other.status == status));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is OrdersState&&const DeepCollectionEquality().equals(other.model, model)&&(identical(other.status, status) || other.status == status)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(model),status);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(model),status,errorMessage);
 
 @override
 String toString() {
-  return 'OrdersState(model: $model, status: $status)';
+  return 'OrdersState(model: $model, status: $status, errorMessage: $errorMessage)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $OrdersStateCopyWith<$Res>  {
   factory $OrdersStateCopyWith(OrdersState value, $Res Function(OrdersState) _then) = _$OrdersStateCopyWithImpl;
 @useResult
 $Res call({
- List<OrdersModel> model, OrdersStatus status
+ List<OrdersModel> model, OrdersStatus status, String? errorMessage
 });
 
 
@@ -62,11 +62,12 @@ class _$OrdersStateCopyWithImpl<$Res>
 
 /// Create a copy of OrdersState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? model = null,Object? status = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? model = null,Object? status = null,Object? errorMessage = freezed,}) {
   return _then(_self.copyWith(
 model: null == model ? _self.model : model // ignore: cast_nullable_to_non_nullable
 as List<OrdersModel>,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as OrdersStatus,
+as OrdersStatus,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -151,10 +152,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<OrdersModel> model,  OrdersStatus status)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<OrdersModel> model,  OrdersStatus status,  String? errorMessage)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _OrdersState() when $default != null:
-return $default(_that.model,_that.status);case _:
+return $default(_that.model,_that.status,_that.errorMessage);case _:
   return orElse();
 
 }
@@ -172,10 +173,10 @@ return $default(_that.model,_that.status);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<OrdersModel> model,  OrdersStatus status)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<OrdersModel> model,  OrdersStatus status,  String? errorMessage)  $default,) {final _that = this;
 switch (_that) {
 case _OrdersState():
-return $default(_that.model,_that.status);case _:
+return $default(_that.model,_that.status,_that.errorMessage);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -192,10 +193,10 @@ return $default(_that.model,_that.status);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<OrdersModel> model,  OrdersStatus status)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<OrdersModel> model,  OrdersStatus status,  String? errorMessage)?  $default,) {final _that = this;
 switch (_that) {
 case _OrdersState() when $default != null:
-return $default(_that.model,_that.status);case _:
+return $default(_that.model,_that.status,_that.errorMessage);case _:
   return null;
 
 }
@@ -207,7 +208,7 @@ return $default(_that.model,_that.status);case _:
 
 
 class _OrdersState implements OrdersState {
-  const _OrdersState({required final  List<OrdersModel> model, required this.status}): _model = model;
+  const _OrdersState({required final  List<OrdersModel> model, required this.status, this.errorMessage}): _model = model;
   
 
  final  List<OrdersModel> _model;
@@ -218,6 +219,7 @@ class _OrdersState implements OrdersState {
 }
 
 @override final  OrdersStatus status;
+@override final  String? errorMessage;
 
 /// Create a copy of OrdersState
 /// with the given fields replaced by the non-null parameter values.
@@ -229,16 +231,16 @@ _$OrdersStateCopyWith<_OrdersState> get copyWith => __$OrdersStateCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OrdersState&&const DeepCollectionEquality().equals(other._model, _model)&&(identical(other.status, status) || other.status == status));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OrdersState&&const DeepCollectionEquality().equals(other._model, _model)&&(identical(other.status, status) || other.status == status)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_model),status);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_model),status,errorMessage);
 
 @override
 String toString() {
-  return 'OrdersState(model: $model, status: $status)';
+  return 'OrdersState(model: $model, status: $status, errorMessage: $errorMessage)';
 }
 
 
@@ -249,7 +251,7 @@ abstract mixin class _$OrdersStateCopyWith<$Res> implements $OrdersStateCopyWith
   factory _$OrdersStateCopyWith(_OrdersState value, $Res Function(_OrdersState) _then) = __$OrdersStateCopyWithImpl;
 @override @useResult
 $Res call({
- List<OrdersModel> model, OrdersStatus status
+ List<OrdersModel> model, OrdersStatus status, String? errorMessage
 });
 
 
@@ -266,11 +268,12 @@ class __$OrdersStateCopyWithImpl<$Res>
 
 /// Create a copy of OrdersState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? model = null,Object? status = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? model = null,Object? status = null,Object? errorMessage = freezed,}) {
   return _then(_OrdersState(
 model: null == model ? _self._model : model // ignore: cast_nullable_to_non_nullable
 as List<OrdersModel>,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as OrdersStatus,
+as OrdersStatus,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

@@ -22,8 +22,9 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController phoneNumberController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmController = TextEditingController();
-  bool _isInit = false; //
-  void _submitForm(BuildContext context) {
+  bool _isInit = false;
+
+  void _submitForm() {
     if (_formKey.currentState!.validate()) {
       final firstName = firstNameController.text.trim();
       final lastName = lastNameController.text.trim();
@@ -31,11 +32,34 @@ class _SignUpPageState extends State<SignUpPage> {
       final password = passwordController.text.trim();
       final confirm = confirmController.text.trim();
 
+      // Additional validation for phone number
+      final cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+      if (cleanPhone.length < 9) {
+        showCustomDialog(
+          context: context,
+          title: "Xatolik",
+          content: "Telefon raqami noto'g'ri formatda kiritilgan",
+          type: DialogType.error,
+        );
+        return;
+      }
+
+      // Validate password match
+      if (password != confirm) {
+        showCustomDialog(
+          context: context,
+          title: "Xatolik", 
+          content: "Parollar mos emas",
+          type: DialogType.error,
+        );
+        return;
+      }
+
       context.read<AuthBloc>().add(
         SignUpSubmitted(
           firstName: firstName,
           lastName: lastName,
-          phone: phone,
+          phone: cleanPhone,
           password: password,
           confirmPassword: confirm,
         ),
@@ -54,7 +78,7 @@ class _SignUpPageState extends State<SignUpPage> {
         final password = extra['password'] as String?;
 
         if (phone != null && phoneNumberController.text.isEmpty) {
-          phoneNumberController.text = phone;
+          phoneNumberController.text = _formatPhoneForDisplay(phone);
         }
         if (password != null && passwordController.text.isEmpty) {
           passwordController.text = password;
@@ -63,6 +87,36 @@ class _SignUpPageState extends State<SignUpPage> {
       }
       _isInit = true;
     }
+  }
+
+  String _formatPhoneForDisplay(String phone) {
+    final cleaned = phone.replaceAll(RegExp(r'[^\d]'), '');
+    
+    if (cleaned.length >= 12 && cleaned.startsWith('998')) {
+      final code = cleaned.substring(3, 5);
+      final first = cleaned.substring(5, 8);
+      final second = cleaned.substring(8, 10);
+      final third = cleaned.substring(10);
+      return '+998 $code $first $second $third';
+    } else if (cleaned.length == 9) {
+      final code = cleaned.substring(0, 2);
+      final first = cleaned.substring(2, 5);
+      final second = cleaned.substring(5, 7);
+      final third = cleaned.substring(7);
+      return '$code $first $second $third';
+    }
+    
+    return phone;
+  }
+
+  @override
+  void dispose() {
+    firstNameController.dispose();
+    lastNameController.dispose();
+    phoneNumberController.dispose();
+    passwordController.dispose();
+    confirmController.dispose();
+    super.dispose();
   }
 
   @override
@@ -108,11 +162,16 @@ class _SignUpPageState extends State<SignUpPage> {
                             if (value == null || value.trim().isEmpty) {
                               return "Iltimos ismingizni kiriting!";
                             }
+                            if (value.trim().length < 2) {
+                              return "Ism kamida 2 ta harfdan iborat bo'lishi kerak!";
+                            }
                             return null;
                           },
                         ),
                       ],
                     ),
+                    
+                    /// Last Name
                     Column(
                       spacing: 8.h,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,13 +189,16 @@ class _SignUpPageState extends State<SignUpPage> {
                             if (value == null || value.trim().isEmpty) {
                               return "Iltimos familyangizni kiriting!";
                             }
+                            if (value.trim().length < 2) {
+                              return "Familiya kamida 2 ta harfdan iborat bo'lishi kerak!";
+                            }
                             return null;
                           },
                         ),
                       ],
-
                     ),
 
+                    /// Phone Number
                     Column(
                       spacing: 8.h,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,14 +216,26 @@ class _SignUpPageState extends State<SignUpPage> {
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return "Iltimos telefon raqam kiriting!";
-                            } else if (value.length < 9) {
-                              return "Telefon raqam to‘liq emas!";
                             }
-                            return null;
+                            
+                            final cleaned = value.replaceAll(RegExp(r'[^\d]'), '');
+                            if (cleaned.length < 9) {
+                              return "Telefon raqam kamida 9 raqamdan iborat bo'lishi kerak!";
+                            }
+                            
+                            if (cleaned.length == 9) {
+                              return null;
+                            } else if (cleaned.length == 12 && cleaned.startsWith('998')) {
+                              return null;
+                            } else {
+                              return "Telefon raqami noto'g'ri formatda!";
+                            }
                           },
                         ),
                       ],
                     ),
+                    
+                    /// Password
                     Column(
                       spacing: 8.h,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,21 +254,22 @@ class _SignUpPageState extends State<SignUpPage> {
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return "Iltimos parol kiriting!";
-                            } else if (value.length < 6) {
-                              return "Parol kamida 6 ta belgidan iborat bo‘lishi kerak!";
+                            } else if (value.trim().length < 6) {
+                              return "Parol kamida 6 ta belgidan iborat bo'lishi kerak!";
                             }
                             return null;
                           },
                         ),
                       ],
-
                     ),
+                    
+                    /// Confirm Password
                     Column(
                       spacing: 8.h,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const AppText(
-                          text: "Qayta Parol",
+                          text: "Parolni tasdiqlash",
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
@@ -221,36 +296,44 @@ class _SignUpPageState extends State<SignUpPage> {
               32.verticalSpace,
               BlocListener<AuthBloc, AuthState>(
                 listener: (context, state) {
-                  if (state.status == AuthStatus.error) {
-                    showCustomDialog(
-                      context: context,
-                      title: "Xatolik",
-                      content: "Ro‘yxatdan o‘tishda xatolik yuz berdi",
-                      type: DialogType.error,
-                    );
-                  } else if (state.status == AuthStatus.submit) {
-                    showCustomDialog(
-                      context: context,
-                      title: "SMS yuborildi",
-                      content: "Telefon raqamingizga tasdiqlash kodi yuborildi",
-                      type: DialogType.success,
-                      onConfirm: () => context.push(Routes.reset, extra: phoneNumberController.text.trim()),
-                    );
-                  } else if (state.status == AuthStatus.userNotFound) {
-                    showCustomDialog(
-                      context: context,
-                      title: "Diqqat",
-                      content: "Bu raqam oldin ro‘yxatdan o‘tgan!",
-                      type: DialogType.warning,
-                      onConfirm: () => context.push(Routes.login, extra: {
-                        "phone": phoneNumberController.text.trim(),
-                      }),
-                    );
+                  switch (state.status) {
+                    case AuthStatus.error:
+                      showCustomDialog(
+                        context: context,
+                        title: "Xatolik",
+                        content: "Ro'yxatdan o'tishda xatolik yuz berdi. Ma'lumotlaringizni tekshiring va qaytadan urinib ko'ring.",
+                        type: DialogType.error,
+                      );
+                      break;
+                    case AuthStatus.verify:
+                      showCustomDialog(
+                        context: context,
+                        title: "Muvaffaqiyatli",
+                        content: "Telefon raqamingizga tasdiqlash kodi yuborildi",
+                        type: DialogType.success,
+                        onConfirm: () {
+                          final cleanPhone = phoneNumberController.text.replaceAll(RegExp(r'[^\d]'), '');
+                          context.push(Routes.reset, extra: cleanPhone);
+                        },
+                      );
+                      break;
+                    case AuthStatus.alreadyExists:
+                      showCustomDialog(
+                        context: context,
+                        title: "Diqqat",
+                        content: "Bu telefon raqami allaqachon ro'yxatdan o'tgan. Login sahifasiga o'ting.",
+                        type: DialogType.warning,
+                        onConfirm: () => context.pushReplacement(Routes.login),
+                      );
+                      break;
+                    default:
+                      break;
                   }
                 },
                 child: AppElevatedButton(
-                  onPressed: () => _submitForm(context),
-                  text: "Continue",
+                  onPressed: _submitForm,
+                  text: "Ro'yxatdan o'tish",
+                  icon: Icons.arrow_forward,
                 ),
               )
             ],
