@@ -7,9 +7,8 @@ import 'package:gazobeton/features/auth/bloc/auth_state.dart';
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _repository;
 
-  AuthBloc({required AuthRepository repository})
-      : _repository = repository,
-        super(AuthState.initial()) {
+  AuthBloc({required AuthRepository repository}) : _repository = repository, super(AuthState.initial()) {
+    
     on<LoginSubmitted>(_login);
     on<SignUpSubmitted>(_signUp);
     on<VerifySubmitted>(_verify);
@@ -93,7 +92,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       (error) {
         switch (error) {
           case AuthError.userNotFound:
-            emit(state.copyWith(status: AuthStatus.userNotFound));
+            emit(state.copyWith(status: AuthStatus.error));
             break;
           case AuthError.invalidCredentials:
             emit(state.copyWith(status: AuthStatus.error));
